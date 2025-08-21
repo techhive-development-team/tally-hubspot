@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@hubspot/api-client": "^13.1.0",
     "express": "^5.1.0"
   }
 }
