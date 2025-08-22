@@ -1,30 +1,30 @@
 import express from "express";
 import axios from "axios";
-import dotenv from "dotenv";
 
-dotenv.config();
 const app = express();
 app.use(express.json());
 
-// HubSpot Token from .env
-const HUBSPOT_TOKEN = process.env.HUBSPOT_TOKEN;
+// HubSpot Private App Token
+const HUBSPOT_TOKEN = process.env.HUBSPOT_API_KEY;
 
+// Tally webhook endpoint
 app.post("/tally-webhook", async (req, res) => {
   try {
-    const data = req.body.data;
+    console.log("Tally Webhook Data:", req.body);
 
-    const email = data.find(f => f.question === "Email")?.answer;
-    const phone = data.find(f => f.question === "Phone")?.answer;
-    const name  = data.find(f => f.question === "Name")?.answer;
+    const { fields } = req.body.data;
 
-    // Send to HubSpot
-    await axios.post(
+    const name = fields.Name || "";
+    const email = fields.Email || "";
+    const phone = fields.Phone || "";
+
+    const response = await axios.post(
       "https://api.hubapi.com/crm/v3/objects/contacts",
       {
         properties: {
-          email,
-          phone,
+          email: email,
           firstname: name,
+          phone: phone,
         },
       },
       {
@@ -35,12 +35,18 @@ app.post("/tally-webhook", async (req, res) => {
       }
     );
 
-    res.json({ success: true, message: "Contact sent to HubSpot" });
+    console.log("HubSpot Response:", response.data);
+
+    res.sendStatus(200);
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).json({ error: "Failed to send to HubSpot" });
+    console.error(
+      "❌ Error sending to HubSpot:",
+      err.response?.data || err.message
+    );
+    res.sendStatus(500);
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(3000, () => {
+  console.log("✅ Server running on http://localhost:3000");
+});
