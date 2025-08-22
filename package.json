@@ -1,7 +1,13 @@
 {
+  "name": "tally-hubspot",
+  "version": "1.0.0",
+  "main": "app.js",
   "dependencies": {
     "@hubspot/api-client": "^13.1.0",
     "axios": "^1.11.0",
     "express": "^5.1.0"
+  },
+  "scripts": {
+    "start": "node app.js"
   }
 }
