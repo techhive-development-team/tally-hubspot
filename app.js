@@ -1,19 +1,43 @@
 import express from "express";
-import crypto from "crypto";
-import { Client as HubSpot } from "@hubspot/api-client";
+import axios from "axios";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const TALLY_SIGNING_SECRET = process.env.TALLY_SIGNING_SECRET || "";
-const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN || "";
+app.use(express.json());
 
-const hubspot = new HubSpot({ accessToken: HUBSPOT_ACCESS_TOKEN });
+const HUBSPOT_TOKEN = "YOUR_HUBSPOT_PRIVATE_APP_TOKEN";
 
-app.post("/tally/webhook", (req, res) => {
-  const secret = req.query.secret;
-  if (secret !== TALLY_SIGNING_SECRET) {
-    return res.status(403).send("Forbidden");
+app.post("/tally-webhook", async (req, res) => {
+  try {
+    const data = req.body.data; // Tally sends submission here
+
+    // Extract fields (use your Tally field names)
+    const email = data.find((f) => f.question === "Email")?.answer;
+    const phone = data.find((f) => f.question === "Phone")?.answer;
+    const name = data.find((f) => f.question === "Name")?.answer;
+
+    // Send to HubSpot CRM
+    await axios.post(
+      "https://api.hubapi.com/crm/v3/objects/contacts",
+      {
+        properties: {
+          email: email,
+          phone: phone,
+          firstname: name,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${HUBSPOT_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to send to HubSpot" });
   }
-  const name = submission.data.fields.find((f) => f.label === "Name")?.value;
-  const email = submission.data.fields.find((f) => f.label === "Email")?.value;
 });
+
+app.listen(3000, () => console.log("Server running on port 3000"));
